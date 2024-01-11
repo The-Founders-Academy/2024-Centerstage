@@ -33,13 +33,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     private Pose2d m_pose;
     private IMU m_imu;
     private Timer m_elapsedTime;
-    // private Vision m_vision;
-
-    // These values need to be tuned when we have access to the drivetrain.
-    private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0, 0);
-    private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0, 0);
-    private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0.05, 0, 0);
-
     private MultipleTelemetry multiTelemetry = new MultipleTelemetry(DriverStation.getInstance().telemetry, FtcDashboard.getInstance().getTelemetry());
 
 
@@ -85,10 +78,6 @@ public class MecanumDrivetrain extends SubsystemBase {
                 m_pose
         );
 
-        // Set PID error tolerances. If the error is less than the tolerance, the PID loop is considered finished
-        setTranslationTolerance(DrivetrainConstants.TranslationToleranceMeters);
-        m_angleRadiansPIDF.setTolerance(DrivetrainConstants.AnglePIDTolerance.getRadians());
-
 
         // We only need a timer object to call m_odometry.updateWithTime(), so the specific length doesn't matter, as long as it lasts longer than an FTC match.
         m_elapsedTime = new Timer(1200); // 20 minutes
@@ -121,14 +110,10 @@ public class MecanumDrivetrain extends SubsystemBase {
     @Override
     public void periodic() {
         updatePose();
-        tunePIDs();
 
         multiTelemetry.addData("RobotPoseX", getPose().getX());
         multiTelemetry.addData("RobotPoseY", getPose().getY());
         multiTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
-        multiTelemetry.addData("TargetX", m_xPIDF.getSetPoint());
-        multiTelemetry.addData("TargetY", m_yPIDF.getSetPoint());
-        multiTelemetry.addData(("TargetAngleRad"), m_angleRadiansPIDF.getSetPoint());
     }
 
     /**
@@ -141,97 +126,22 @@ public class MecanumDrivetrain extends SubsystemBase {
         return new Rotation2d(m_imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
     }
 
-    public void setTarget(Pose2d target) {
-        m_xPIDF.setSetPoint(target.getX());
-        m_yPIDF.setSetPoint(target.getY());
-        m_angleRadiansPIDF.setSetPoint(target.getRotation().getRadians());
-    }
-
-    public void resetPIDs() {
-        m_xPIDF.reset();
-        m_yPIDF.reset();
-        m_angleRadiansPIDF.reset();
-    }
-
-    public void moveToTarget() {
-        double x = 0;
-        double y = 0;
-        double omegaPercent = 0;
-        if(atTranslationTarget() == false) {
-            x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1);
-            y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1);
-        }
-
-        if(atRotationTarget() == false) {
-            // negative for some reason (check ?)
-            omegaPercent = -UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getPose().getRotation().getRadians()), -1, 1);
-        }
-
-        moveFieldRelative(x, y, omegaPercent);
-    }
-
-    public boolean atTarget() {
-        if(atTranslationTarget() && atRotationTarget()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean atTranslationTarget() {
-        return (m_xPIDF.atSetPoint() && m_yPIDF.atSetPoint());
-    }
-
-    private boolean atRotationTarget() {
-        return m_angleRadiansPIDF.atSetPoint();
-    }
-
-    public void setTranslationTolerance(double tolerance) {
-        m_xPIDF.setTolerance(tolerance);
-        m_yPIDF.setTolerance(tolerance);
-    }
-
     // This function is used by the mecanumDrivetrain class itself to update its position on the field. It works by
     // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
     // It will use the odometry object to update the robot's postiion.
     private void updatePose() {
-        Pose2d visionPose = null; // m_vision.getRobotPoseFromAprilTags();
-
         // Check to see if we saw and read an april tag
-        if(visionPose != null) {
-            m_pose = visionPose;
-            m_odometry.resetPosition(m_pose, getHeading());
-        } else {
-            MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
-                    m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
-                    m_backLeft.getVelocity(), m_backRight.getVelocity()
+        MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
+                m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
+                m_backLeft.getVelocity(), m_backRight.getVelocity()
             );
 
-            // Our coordinate system is flipped (see above)
-            Pose2d m_falsePose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
-            m_pose = new Pose2d(-m_falsePose.getY(), m_falsePose.getX(), m_falsePose.getRotation());
-        }
+        // Our coordinate system is flipped (see above)
+        Pose2d m_falsePose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+        m_pose = new Pose2d(-m_falsePose.getY(), m_falsePose.getX(), m_falsePose.getRotation());
     }
 
     public void resetHeading() {
         m_imu.resetYaw();
-    }
-
-    private void tunePIDs() {
-        m_xPIDF.setP(DrivetrainConstants.xCoefficients.p);
-        m_xPIDF.setI(DrivetrainConstants.xCoefficients.i);
-        m_xPIDF.setD(DrivetrainConstants.xCoefficients.d);
-        m_xPIDF.setF(DrivetrainConstants.xCoefficients.f);
-
-        m_yPIDF.setP(DrivetrainConstants.yCoefficients.p);
-        m_yPIDF.setI(DrivetrainConstants.yCoefficients.i);
-        m_yPIDF.setD(DrivetrainConstants.yCoefficients.d);
-        m_yPIDF.setF(DrivetrainConstants.yCoefficients.f);
-
-        m_angleRadiansPIDF.setP(DrivetrainConstants.AngleCoefficients.p);
-        m_angleRadiansPIDF.setI(DrivetrainConstants.AngleCoefficients.i);
-        m_angleRadiansPIDF.setD(DrivetrainConstants.AngleCoefficients.d);
-        m_angleRadiansPIDF.setF(DrivetrainConstants.AngleCoefficients.f);
-
     }
 }
