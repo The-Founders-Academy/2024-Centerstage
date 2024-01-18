@@ -9,6 +9,9 @@ public class DriveToPosition extends CommandBase {
     private MecanumDrivetrain m_mecanumDrive;
     public DriveToPosition(MecanumDrivetrain drivetrain, double x, double y, Rotation2d rotation) {
         m_mecanumDrive = drivetrain;
+
+        addRequirements(m_mecanumDrive);
+        m_mecanumDrive.setTarget(x, y, Rotation2d.fromDegrees(0));
     }
 
     @Override
@@ -19,5 +22,10 @@ public class DriveToPosition extends CommandBase {
     @Override
     public boolean isFinished() {
         return m_mecanumDrive.atTarget();
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        m_mecanumDrive.resetPIDs();
     }
 }

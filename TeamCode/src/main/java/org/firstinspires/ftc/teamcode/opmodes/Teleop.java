@@ -9,6 +9,7 @@ import com.arcrobotics.ftclib.geometry.Pose2d;
 import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.commands.drivetrain.DriveToPosition;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.ResetPose;
 import org.firstinspires.ftc.teamcode.subsystems.GamepadSubsystem;
@@ -29,6 +30,7 @@ public class Teleop extends CommandOpMode {
 
         // When the driver presses the A button, drive forward 1 meter. We can use this to test odometry.
         m_driver.buttonB().whenPressed(new ResetPose(m_drivetrain));
+        m_driver.buttonY().whenPressed(new DriveToPosition(m_drivetrain, 0, 1, new Rotation2d(0)));
         // Score
         // Shoot airplane
     }

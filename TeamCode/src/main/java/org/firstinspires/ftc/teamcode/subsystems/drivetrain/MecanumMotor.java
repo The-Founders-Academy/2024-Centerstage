@@ -12,19 +12,19 @@ public class MecanumMotor {
     public MecanumMotor(MotorEx motor) {
         m_motor = motor;
         m_motor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.FLOAT);
-        m_motor.encoder.setDistancePerPulse(Constants.DrivetrainConstants.DistancePerEncoderTick);
+        m_motor.encoder.setDistancePerPulse(Constants.MecanumConstants.DistancePerEncoderTick);
         m_motor.setRunMode(Motor.RunMode.VelocityControl);
         m_motor.setVeloCoefficients(0.01, 0, 0);
 
     }
 
     public double getVelocity() {
-        return m_motor.getVelocity() * Constants.DrivetrainConstants.DistancePerEncoderTick;
+        return m_motor.getVelocity() * Constants.MecanumConstants.DistancePerEncoderTick;
     }
 
     // Velocity in meters per second
     public void setTargetVelocity(double targetVelocity) {
-        m_motor.setVelocity(targetVelocity / Constants.DrivetrainConstants.DistancePerEncoderTick);
+        m_motor.setVelocity(targetVelocity / Constants.MecanumConstants.DistancePerEncoderTick);
     }
 
     public void setInverted(boolean val) {

@@ -21,8 +21,8 @@ public class DriverRelativeDrive extends CommandBase {
 
     @Override
     public void execute() {
-        double horizontalPercent = m_driver.getLeftX();
-        double verticalPercent = m_driver.getLeftY();
+        double horizontalPercent = m_driver.getLeftX() * Constants.MecanumConstants.MaxRobotSpeedMetersPerSecond;
+        double verticalPercent = m_driver.getLeftY() * Constants.MecanumConstants.MaxRobotSpeedMetersPerSecond;
         double omegaPercent = m_driver.getRightX() * 0.5;
         m_drivetrain.moveFieldRelative(horizontalPercent, verticalPercent, omegaPercent);
     }

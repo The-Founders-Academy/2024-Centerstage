@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
 import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
@@ -17,10 +18,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
+import org.firstinspires.ftc.teamcode.Constants.MecanumConstants;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
-
-import java.sql.Driver;
 
 // SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
@@ -31,12 +30,12 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     private MultipleTelemetry multiTelemetry = new MultipleTelemetry(DriverStation.getInstance().telemetry, FtcDashboard.getInstance().getTelemetry());
-
+    private PIDFController m_xPIDF;
+    private PIDFController m_yPIDF;
 
     // private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
     public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
         // Initialize hardware
-
         m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
@@ -66,8 +65,8 @@ public class MecanumDrivetrain extends SubsystemBase {
 
         // Initialize kinematics & odometry
         m_kinematics = new MecanumDriveKinematics(
-                DrivetrainConstants.FrontLeftMotorLocation, DrivetrainConstants.FrontRightMotorLocation,
-                DrivetrainConstants.BackLeftMotorLocation, DrivetrainConstants.BackRightMotorLocation
+                MecanumConstants.FrontLeftMotorLocation, MecanumConstants.FrontRightMotorLocation,
+                MecanumConstants.BackLeftMotorLocation, MecanumConstants.BackRightMotorLocation
                 );
 
         m_odometry = new MecanumDriveOdometry(
@@ -75,6 +74,14 @@ public class MecanumDrivetrain extends SubsystemBase {
                 m_pose
         );
 
+
+        m_xPIDF = new PIDFController(MecanumConstants.XCoefficients.p, MecanumConstants.XCoefficients.i,
+                                     MecanumConstants.XCoefficients.d, MecanumConstants.XCoefficients.f);
+        m_yPIDF = new PIDFController(MecanumConstants.YCoefficients.p, MecanumConstants.YCoefficients.i,
+                MecanumConstants.YCoefficients.d, MecanumConstants.YCoefficients.f);
+
+        m_xPIDF.setTolerance(0.2);
+        m_yPIDF.setTolerance(0.2);
 
         // We only need a timer object to call m_odometry.updateWithTime(), so the specific length doesn't matter, as long as it lasts longer than an FTC match.
         m_elapsedTime = new Timer(1200); // 20 minutes
@@ -93,12 +100,12 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
     }
 
-    // positive x = away from you
-    // positive y = to your left
-    public void moveFieldRelative(double velocityXPercent, double velocityYPercent, double omegaPercent) {
-        double velocityXMetersPerSecond = -velocityXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double velocityYMetersPerSecond = velocityYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double omegaRadiansPerSecond = -omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
+    // positive y = away from yu
+    // positive x = right
+    public void moveFieldRelative(double velocityXMps, double velocityYMps, double omegaPercent) {
+        double velocityXMetersPerSecond = -velocityXMps;
+        double velocityYMetersPerSecond = velocityYMps;
+        double omegaRadiansPerSecond = -omegaPercent * MecanumConstants.MaxAngularVeloityRadiansPerSecond;
 
         ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityYMetersPerSecond, velocityXMetersPerSecond, omegaRadiansPerSecond, getHeading());
         move(speeds);
@@ -110,7 +117,13 @@ public class MecanumDrivetrain extends SubsystemBase {
 
         multiTelemetry.addData("RobotPoseX", getPose().getX());
         multiTelemetry.addData("RobotPoseY", getPose().getY());
-        multiTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
+
+
+        multiTelemetry.addData("yPIDF", m_xPIDF);
+        multiTelemetry.addData("yPIDF", m_yPIDF);
+        multiTelemetry.addData("ySetPoint", m_yPIDF.getSetPoint());
+        multiTelemetry.addData("atTarget", Boolean.toString(atTarget()));
+        tunePIDs();
     }
 
     /**
@@ -143,17 +156,29 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-
+        double xVelocityMps =  m_xPIDF.calculate(m_pose.getX());
+        double yVelocityMps = m_yPIDF.calculate(m_pose.getY());
+        moveFieldRelative(xVelocityMps, yVelocityMps, 0);
     }
 
     public void setTarget(double x, double y, Rotation2d rotation) {
-
+        m_xPIDF.setSetPoint(x);
+        m_yPIDF.setSetPoint(y);
     }
 
     public void tunePIDs() {
+        m_xPIDF.setPIDF(MecanumConstants.XCoefficients.p, MecanumConstants.XCoefficients.i,
+                MecanumConstants.XCoefficients.d, MecanumConstants.XCoefficients.f);
+        m_yPIDF.setPIDF(MecanumConstants.YCoefficients.p, MecanumConstants.YCoefficients.i,
+                MecanumConstants.YCoefficients.d, MecanumConstants.YCoefficients.f);
     }
 
     public boolean atTarget() {
-        return false;
+        return m_yPIDF.atSetPoint();
+    }
+
+    public void resetPIDs() {
+        m_xPIDF.reset();
+        m_yPIDF.reset();
     }
 }
