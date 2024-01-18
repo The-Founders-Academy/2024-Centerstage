@@ -20,6 +20,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
 
+import java.sql.Driver;
+
 // SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
     private MecanumMotor m_frontLeft, m_frontRight, m_backLeft, m_backRight;
@@ -123,7 +125,7 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     // This function is used by the mecanumDrivetrain class itself to update its position on the field. It works by
     // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
-    // It will use the odometry object to update the robot's postiion.
+    // It will use the odometry object to update the robot's postion.
     private void updatePose() {
         // Check to see if we saw and read an april tag
         MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
@@ -132,11 +134,26 @@ public class MecanumDrivetrain extends SubsystemBase {
             );
 
         // Our coordinate system is flipped (see above)
-        Pose2d m_falsePose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+        Pose2d m_falsePose = m_odometry.updateWithTime(DriverStation.getInstance().ElapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
         m_pose = new Pose2d(-m_falsePose.getY(), m_falsePose.getX(), m_falsePose.getRotation());
     }
 
     public void resetHeading() {
         m_imu.resetYaw();
+    }
+
+    public void moveToTarget() {
+
+    }
+
+    public void setTarget(double x, double y, Rotation2d rotation) {
+
+    }
+
+    public void tunePIDs() {
+    }
+
+    public boolean atTarget() {
+        return false;
     }
 }

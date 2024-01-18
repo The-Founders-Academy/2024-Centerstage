@@ -13,7 +13,6 @@ import java.util.function.Supplier;
 public class DriverRelativeDrive extends CommandBase {
     private GamepadSubsystem m_driver;
     private MecanumDrivetrain m_drivetrain;
-
     public DriverRelativeDrive(MecanumDrivetrain mecanumDrive, GamepadSubsystem driver) {
         m_driver = driver;
         m_drivetrain = mecanumDrive;
