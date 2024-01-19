@@ -17,10 +17,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
+import org.firstinspires.ftc.teamcode.Constants.MecanumConstants;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
-
-import java.sql.Driver;
 
 // SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
@@ -66,8 +64,8 @@ public class MecanumDrivetrain extends SubsystemBase {
 
         // Initialize kinematics & odometry
         m_kinematics = new MecanumDriveKinematics(
-                DrivetrainConstants.FrontLeftMotorLocation, DrivetrainConstants.FrontRightMotorLocation,
-                DrivetrainConstants.BackLeftMotorLocation, DrivetrainConstants.BackRightMotorLocation
+                MecanumConstants.FrontLeftMotorLocation, MecanumConstants.FrontRightMotorLocation,
+                MecanumConstants.BackLeftMotorLocation, MecanumConstants.BackRightMotorLocation
                 );
 
         m_odometry = new MecanumDriveOdometry(
@@ -79,6 +77,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         // We only need a timer object to call m_odometry.updateWithTime(), so the specific length doesn't matter, as long as it lasts longer than an FTC match.
         m_elapsedTime = new Timer(1200); // 20 minutes
         m_elapsedTime.start();
+
     }
 
     public Pose2d getPose() {
@@ -95,19 +94,14 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     // positive x = away from you
     // positive y = to your left
-    public void moveFieldRelative(double velocityXPercent, double velocityYPercent, double omegaPercent) {
-        double velocityXMetersPerSecond = -velocityXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double velocityYMetersPerSecond = velocityYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double omegaRadiansPerSecond = -omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
-
-        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityYMetersPerSecond, velocityXMetersPerSecond, omegaRadiansPerSecond, getHeading());
+    public void moveFieldRelative(double xVelocityMps, double yVelocityMps, double omegaRps) {
+        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xVelocityMps, yVelocityMps, omegaRps, getHeading());
         move(speeds);
     }
 
     @Override
     public void periodic() {
         updatePose();
-
         multiTelemetry.addData("RobotPoseX", getPose().getX());
         multiTelemetry.addData("RobotPoseY", getPose().getY());
         multiTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
@@ -123,11 +117,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         return new Rotation2d(m_imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
     }
 
-    // This function is used by the mecanumDrivetrain class itself to update its position on the field. It works by
-    // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
-    // It will use the odometry object to update the robot's postion.
     private void updatePose() {
-        // Check to see if we saw and read an april tag
         MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
                 m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
                 m_backLeft.getVelocity(), m_backRight.getVelocity()

@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.commands.drivetrain;
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 
+import org.firstinspires.ftc.robotcore.external.Const;
 import org.firstinspires.ftc.teamcode.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.GamepadSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
@@ -21,9 +22,9 @@ public class DriverRelativeDrive extends CommandBase {
 
     @Override
     public void execute() {
-        double horizontalPercent = m_driver.getLeftX();
-        double verticalPercent = m_driver.getLeftY();
-        double omegaPercent = m_driver.getRightX() * 0.5;
-        m_drivetrain.moveFieldRelative(horizontalPercent, verticalPercent, omegaPercent);
+        double xVelocityMps = m_driver.getLeftY() * Constants.MecanumConstants.MaxRobotSpeedMetersPerSecond;
+        double yVelocityMps = -m_driver.getLeftX() * Constants.MecanumConstants.MaxRobotSpeedMetersPerSecond;
+        double omegaRps =  -m_driver.getRightX() * Constants.MecanumConstants.MaxAngularVeloityRadiansPerSecond;
+        m_drivetrain.moveFieldRelative(xVelocityMps, yVelocityMps, omegaRps);
     }
 }

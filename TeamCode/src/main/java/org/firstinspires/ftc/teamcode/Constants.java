@@ -1,10 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.arcrobotics.ftclib.geometry.Pose2d;
-import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.arcrobotics.ftclib.geometry.Translation2d;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 public class Constants {
 
@@ -15,7 +12,7 @@ public class Constants {
     vertical: 168 mm
      */
     @Config
-    public static class DrivetrainConstants {
+    public static class MecanumConstants {
         public static final double MaxRobotSpeedMetersPerSecond = 1.5; // Theoretical value from the strafer chassis product page
         public static final double MaxAngularVeloityRadiansPerSecond = 2*Math.PI;
         public static final Translation2d FrontLeftMotorLocation = new Translation2d(0.178, 0.168);
