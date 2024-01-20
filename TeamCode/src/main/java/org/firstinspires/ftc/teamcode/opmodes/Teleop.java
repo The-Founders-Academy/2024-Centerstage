@@ -41,6 +41,7 @@ public class Teleop extends CommandOpMode {
     @Override
     public void initialize() {
         setupDriverStation();
+        CommandScheduler.getInstance().cancelAll();
 
         m_driver = new GamepadSubsystem(new GamepadEx(gamepad1));
         m_operator = new GamepadSubsystem(new GamepadEx(gamepad2));
