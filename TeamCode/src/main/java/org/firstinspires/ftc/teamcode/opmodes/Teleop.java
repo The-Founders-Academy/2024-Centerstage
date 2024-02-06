@@ -5,8 +5,6 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.command.CommandOpMode;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import com.arcrobotics.ftclib.geometry.Pose2d;
-import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
@@ -26,9 +24,8 @@ public class Teleop extends CommandOpMode {
     private MultipleTelemetry multiTelemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     private void driverControls() {
         m_drivetrain.setDefaultCommand(new DriverRelativeDrive(m_drivetrain, m_driver));
-
+        m_driver.buttonA().whenPressed(new ResetPose(m_drivetrain));
         // When the driver presses the A button, drive forward 1 meter. We can use this to test odometry.
-        m_driver.buttonB().whenPressed(new ResetPose(m_drivetrain));
         // Score
         // Shoot airplane
     }
